@@ -6,7 +6,7 @@ import express from "express";
 import { rateLimit } from "express-rate-limit";
 import * as bodyParser from "express";
 
-import blogsRoute from "./routes/blogsRoute";
+import blogsRoute from "./routes/blogsRoute.js";
 
 const app = express();
 
@@ -33,7 +33,23 @@ app.use("/api", limiter);
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 
 // Data sanitization against XSS
-app.use(xss());
+app.use((req, res, next) => {
+  const sanitize = (obj) => {
+    for (const key in obj) {
+      if (typeof obj[key] === "string") {
+        obj[key] = xss(obj[key]);
+      } else if (typeof obj[key] === "object" && obj[key] !== null) {
+        sanitize(obj[key]);
+      }
+    }
+  };
+
+  if (req.body) sanitize(req.body);
+  if (req.query) sanitize(req.query);
+  if (req.params) sanitize(req.params);
+
+  next();
+});
 
 // Prevent parameter pollution
 app.use(hpp({

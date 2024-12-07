@@ -7,22 +7,20 @@ import {
   getBlog,
   updateBlog,
   updateBlogStatus,
-} from "../controller/blogController";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+} from "../controller/blogController.js";
+import { restrictTo } from "../controller/authController.js";
 
 // Creating a blog
-router.post("/create-blog", createBlog);
+router.post("/create-blog", restrictTo, createBlog);
 
 // Updating a blog
-router.patch("/update-blog/:id", updateBlog);
+router.patch("/update-blog/:id", restrictTo, updateBlog);
 
 // Making a blog visible or hidden
-router.patch("/update-blog-status/:id", updateBlogStatus);
+router.patch("/update-blog-status/:id", restrictTo, updateBlogStatus);
 
 // Deleting a blog
-router.delete("/delete-blog/:id", deleteBlog);
+router.delete("/delete-blog/:id", restrictTo, deleteBlog);
 
 // Getting a specific blog
 router.get("/get-blog/:id", getBlog);
