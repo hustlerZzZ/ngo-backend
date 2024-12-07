@@ -4,16 +4,16 @@ import cors from "cors";
 import helmet from "helmet";
 import express from "express";
 import { rateLimit } from "express-rate-limit";
+import * as bodyParser from "express";
 
 import blogsRoute from "./routes/blogsRoute";
-import * as bodyParser from "express";
 
 const app = express();
 
 // Parsing JSON
-app.use(express.json());
+app.use(express.json({ limit: "10kb" }));
 
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
 
 // Allowing cors
 app.use(cors());
@@ -36,7 +36,9 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(xss());
 
 // Prevent parameter pollution
-app.use(hpp({}));
+app.use(hpp({
+  whitelist: ["id"]
+}));
 
 // Routes
 app.use("/api/v1/blogs", blogsRoute);
@@ -45,10 +47,10 @@ app.use("/api/v1/blogs", blogsRoute);
 app.use("/uploads", express.static("uploads"));
 
 // Global Catch Handler
-app.use("*", function (req, res) {
+app.all("*", function (req, res) {
   res.status(404).json({
     error: "Not Found",
-    msg: "Route is not found",
+    msg: `Can't find ${req.originalUrl} on this server!`,
   });
 });
 
