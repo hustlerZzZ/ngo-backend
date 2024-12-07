@@ -2,11 +2,16 @@ import hpp from "hpp";
 import xss from "xss";
 import cors from "cors";
 import helmet from "helmet";
+import dotenv from "dotenv";
 import express from "express";
 import { rateLimit } from "express-rate-limit";
 import * as bodyParser from "express";
 
 import blogsRoute from "./routes/blogsRoute.js";
+import adminRoute from "./routes/adminRoute.js";
+
+const envFile = `.env`;
+dotenv.config({path: envFile});
 
 const app = express();
 
@@ -58,6 +63,7 @@ app.use(hpp({
 
 // Routes
 app.use("/api/v1/blogs", blogsRoute);
+app.use("/api/v1/admin", adminRoute);
 
 // Serving Images
 app.use("/uploads", express.static("uploads"));

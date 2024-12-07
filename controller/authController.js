@@ -4,20 +4,31 @@ const prisma = new PrismaClient();
 
 export async function restrictTo(req, res, next) {
   try {
-      const { id } = req.body;
-      const admin = await prisma.user.findUnique({where :{ id, role: "ADMIN" }})
-      if (!admin) {
-          return res.status(401).json({
-              status: "error",
-              msg: "You are not allowed to access this page"
-          })
-      }
+    const { userId } = req;
 
-      next();
-  } catch (e) {
-      res.status(404).json({
-          status: "failed",
-          msg: "Something went wrong",
+    if (!userId) {
+      return res.status(401).json({
+        status: "error",
+        msg: "Unauthorized access. Please log in.",
       });
+    }
+
+    const admin = await prisma.user.findUnique({
+      where: { id: userId, role: "ADMIN" },
+    });
+
+    if (!admin) {
+      return res.status(401).json({
+        status: "error",
+        msg: "You are not allowed to access this page",
+      });
+    }
+
+    next(); // Access given
+  } catch (e) {
+    res.status(404).json({
+      status: "failed",
+      msg: "Something went wrong",
+    });
   }
 }

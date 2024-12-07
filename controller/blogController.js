@@ -13,6 +13,7 @@ export async function createBlog(req, res) {
         msg: "Kindly send all the required fields: title and content",
       });
     }
+
     const images = [];
 
     const newBlog = await prisma.blog.create({
@@ -86,17 +87,17 @@ export async function updateBlog(req, res) {
 
     if (req.files) {
       await Promise.all(
-          req.files.map(async (file, i) => {
-            const fileName = `blog-${id}-${Date.now()}-${i + 1}.jpeg`;
+        req.files.map(async (file, i) => {
+          const fileName = `blog-${id}-${Date.now()}-${i + 1}.jpeg`;
 
-            await sharp(file.buffer)
-                .resize(1920, 1080)
-                .toFormat("jpeg")
-                .jpeg({ quality: 90 })
-                .toFile(`uploads/blogs/${fileName}`);
+          await sharp(file.buffer)
+            .resize(1920, 1080)
+            .toFormat("jpeg")
+            .jpeg({ quality: 90 })
+            .toFile(`uploads/blogs/${fileName}`);
 
-            images.push(fileName);
-          }),
+          images.push(fileName);
+        }),
       );
     }
 
@@ -107,7 +108,7 @@ export async function updateBlog(req, res) {
       data: {
         title: req.body.title || existingBlog.title,
         content: req.body.content || existingBlog.content,
-        images
+        images,
       },
     });
 
@@ -152,7 +153,14 @@ export async function updateBlogStatus(req, res) {
 
 export async function deleteBlog(req, res) {
   try {
-    const id = req.params.id;
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({
+        status: "failed",
+        msg: "Blog ID is required.",
+      });
+    }
 
     await prisma.blog.delete({
       where: {
