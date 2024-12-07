@@ -1,17 +1,19 @@
+import sharp from "sharp";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 export async function createBlog(req, res) {
   try {
-    const { title, content, images } = req.body;
+    const { title, content } = req.body;
 
-    if (!title || !content || !images) {
+    if (!title || !content) {
       return res.status(400).json({
         status: "failed",
-        msg: "Kindly send all the required fields",
+        msg: "Kindly send all the required fields: title and content",
       });
     }
+    const images = [];
 
     const newBlog = await prisma.blog.create({
       data: {
@@ -20,13 +22,38 @@ export async function createBlog(req, res) {
       },
     });
 
+    if (req.files) {
+      await Promise.all(
+        req.files.map(async (file, i) => {
+          const fileName = `blog-${newBlog.id}-${Date.now()}-${i + 1}.jpeg`;
+
+          await sharp(file.buffer)
+            .resize(1920, 1080)
+            .toFormat("jpeg")
+            .jpeg({ quality: 90 })
+            .toFile(`uploads/blogs/${fileName}`);
+
+          images.push(fileName);
+        }),
+      );
+
+      await prisma.blog.update({
+        where: {
+          id: newBlog.id,
+        },
+        data: {
+          images,
+        },
+      });
+    }
+
     res.status(201).json({
       status: "success",
       msg: "Blog created successfully",
       newBlog,
     });
   } catch (e) {
-    res.status(404).json({
+    res.status(500).json({
       status: "failed",
       msg: "Something went wrong",
     });
@@ -37,30 +64,60 @@ export async function updateBlog(req, res) {
   try {
     const id = req.params.id;
 
-    const blog = await prisma.blog.update({
+    if (!id) {
+      return res.status(400).json({
+        status: "failed",
+        msg: "Blog ID is required.",
+      });
+    }
+
+    const existingBlog = await prisma.blog.findUnique({
+      where: { id },
+    });
+
+    if (!existingBlog) {
+      return res.status(404).json({
+        status: "failed",
+        msg: "Blog not found.",
+      });
+    }
+
+    const images = existingBlog.images || [];
+
+    if (req.files) {
+      await Promise.all(
+          req.files.map(async (file, i) => {
+            const fileName = `blog-${id}-${Date.now()}-${i + 1}.jpeg`;
+
+            await sharp(file.buffer)
+                .resize(1920, 1080)
+                .toFormat("jpeg")
+                .jpeg({ quality: 90 })
+                .toFile(`uploads/blogs/${fileName}`);
+
+            images.push(fileName);
+          }),
+      );
+    }
+
+    const updatedBlog = await prisma.blog.update({
       where: {
         id: id,
       },
       data: {
-        title: req.body.title,
-        content: req.body.content,
+        title: req.body.title || existingBlog.title,
+        content: req.body.content || existingBlog.content,
+        images
       },
     });
-
-    if (!blog) {
-      return res.status(404).json({
-        status: "failed",
-        msg: "Unable to update blog",
-      });
-    }
 
     res.status(200).json({
       status: "success",
       msg: "Blog updated successfully",
-      blog,
+      updatedBlog,
     });
   } catch (e) {
-    res.status(404).json({
+    res.status(500).json({
       status: "failed",
       msg: "Something went wrong",
     });
@@ -71,23 +128,22 @@ export async function updateBlogStatus(req, res) {
   try {
     const id = req.params.id;
 
-    const blog = await prisma.blog.update({
+    const updatedBlog = await prisma.blog.update({
       where: {
-        id: id,
+        id,
       },
       data: {
         published: req.body.published,
       },
     });
 
-    if (!blog) {
-      return res.status(404).json({
-        status: "failed",
-        msg: "Unable to update the status of blog",
-      });
-    }
+    res.status(200).json({
+      status: "success",
+      msg: "Blog status updated successfully",
+      blog: updatedBlog,
+    });
   } catch (e) {
-    res.status(404).json({
+    res.status(500).json({
       status: "failed",
       msg: "Something went wrong",
     });
@@ -98,21 +154,15 @@ export async function deleteBlog(req, res) {
   try {
     const id = req.params.id;
 
-    const blog = await prisma.blog.delete({
+    await prisma.blog.delete({
       where: {
-        id: id,
+        id,
       },
     });
 
-    if (!blog) {
-      return res.status(404).json({
-        status: "failed",
-        msg: "Unable to delete the blog",
-      });
-    }
-
-    res.status(205).json({
+    res.status(204).json({
       status: "success",
+      msg: "Blog deleted successfully",
     });
   } catch (e) {
     res.status(404).json({
@@ -144,7 +194,7 @@ export async function getBlog(req, res) {
       blog,
     });
   } catch (e) {
-    res.status(404).json({
+    res.status(500).json({
       status: "failed",
       msg: "Something went wrong",
     });
@@ -161,7 +211,7 @@ export async function getAllBlogs(req, res) {
       allBlogs,
     });
   } catch (e) {
-    res.status(404).json({
+    res.status(500).json({
       status: "failed",
       msg: "Something went wrong",
     });
