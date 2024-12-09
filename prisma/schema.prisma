@@ -12,21 +12,6 @@ enum Role {
   ADMIN
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  role          Role      @default(USER)
-  accounts      Account[]
-  sessions      Session[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Blog      Blog[]
-}
-
 model Blog {
   id        String   @id @default(cuid())
   title     String
@@ -47,6 +32,43 @@ model Image {
   blogId    String
   blog      Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String?
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(USER)
+  accounts      Account[]
+  sessions      Session[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  Blog          Blog[]
+}
+
+model VolunteerForm {
+  id           String  @id @default(cuid())
+  name         String
+  email        String  @unique
+  phone        String
+  address      String
+  state        String
+  country      String
+  zipCode      String
+  photo        String
+  identityCard String
+  message      String?
+}
+
+model ContactForm {
+  id      String @id @default(cuid())
+  name    String
+  email   String
+  subject String
+  message String
 }
 
 model Account {
