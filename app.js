@@ -9,6 +9,8 @@ import * as bodyParser from "express";
 
 import blogsRoute from "./routes/blogsRoute.js";
 import adminRoute from "./routes/adminRoute.js";
+import volunteerRoute from "./routes/volunteerRoute.js";
+import contactRoute from "./routes/contactRoute.js";
 
 const envFile = `.env`;
 dotenv.config({path: envFile});
@@ -64,6 +66,8 @@ app.use(hpp({
 // Routes
 app.use("/api/v1/blogs", blogsRoute);
 app.use("/api/v1/admin", adminRoute);
+app.use("/api/v1/volunteer", volunteerRoute);
+app.use("/api/v1/contact", contactRoute);
 
 // Serving Images
 app.use("/uploads", express.static("uploads"));
