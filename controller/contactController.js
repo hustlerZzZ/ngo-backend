@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import sharp from "sharp";
 
 const prisma = new PrismaClient();
 
